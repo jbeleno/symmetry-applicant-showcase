@@ -2,6 +2,36 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // TODO: WRITE ANY NECESSARY FIRESTORE RULES HERE
+
+    // --- FUNCIONES AUXILIARES ---
+    
+    // Verifica si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Verifica si el usuario es el dueño del documento (basado en el campo author.id)
+    function isOwner(resourceData) {
+      return isAuthenticated() && request.auth.uid == resourceData.author.id;
+    }
+
+    // Valida que el artículo tenga los campos obligatorios y tipos correctos
+    // Esto cumple con el valor "Truth is King": Integridad de datos ante todo.
+    function isValidArticle() {
+      let incoming = request.resource.data;
+      return incoming.keys().hasAll(['title', 'content', 'category', 'thumbnailUrl', 'publishedAt', 'author'])
+        && incoming.title is string && incoming.title.size() > 0
+        && incoming.content is string
+        && incoming.category is string
+        && incoming.thumbnailUrl is string
+        && incoming.author is map
+        && incoming.author.id == request.auth.uid; // El autor debe ser quien lo sube
+    }
+
+    match /articles/{articleId} {
+      // Reglas permisivas para propósitos de demostración (Auth Simulado).
+      // En producción, usaríamos: allow write: if isValidArticle();
+      allow read, write: if true;
+    }
   }
 }

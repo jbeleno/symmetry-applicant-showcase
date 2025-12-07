@@ -4,14 +4,17 @@ import '../../../../../core/constants/constants.dart';
 import 'package:dio/dio.dart';
 part 'news_api_service.g.dart';
 
-@RestApi(baseUrl:newsAPIBaseURL)
+/// Retrofit service definition for NewsAPI.
+/// Note: This service is defined but the project currently uses [NewsRemoteDataSource]
+/// with direct Dio calls for more granular control over error handling and response parsing.
+@RestApi(baseUrl: newsAPIBaseURL)
 abstract class NewsApiService {
   factory NewsApiService(Dio dio) = _NewsApiService;
-  
+
   @GET('/top-headlines')
   Future<HttpResponse<List<ArticleModel>>> getNewsArticles({
-    @Query("apiKey") String ? apiKey,
-    @Query("country") String ? country,
-    @Query("category") String ? category,
+    @Query("apiKey") String? apiKey,
+    @Query("country") String? country,
+    @Query("category") String? category,
   });
 }

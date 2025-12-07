@@ -8,10 +8,12 @@ import '../../../domain/entities/article.dart';
 import '../../bloc/article/local/local_article_bloc.dart';
 import '../../bloc/article/local/local_article_event.dart';
 import '../../bloc/article/local/local_article_state.dart';
-import '../../widgets/article_tile.dart';
+import '../../widgets/feed_item.dart';
 
+/// Page that displays articles saved locally by the user.
+/// Uses [LocalArticleBloc] to fetch data from the local database.
 class SavedArticles extends HookWidget {
-  const SavedArticles({Key ? key}) : super(key: key);
+  const SavedArticles({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,8 @@ class SavedArticles extends HookWidget {
           child: const Icon(Ionicons.chevron_back, color: Colors.black),
         ),
       ),
-      title: const Text('Saved Articles', style: TextStyle(color: Colors.black)),
+      title:
+          const Text('Saved Articles', style: TextStyle(color: Colors.black)),
     );
   }
 
@@ -43,44 +46,50 @@ class SavedArticles extends HookWidget {
         if (state is LocalArticlesLoading) {
           return const Center(child: CupertinoActivityIndicator());
         } else if (state is LocalArticlesDone) {
-          return _buildArticlesList(state.articles!);
+          if (state.articles!.isEmpty) {
+            return const Center(
+                child: Text(
+              'NO SAVED ARTICLES',
+              style: TextStyle(color: Colors.black),
+            ));
+          }
+          return ListView.builder(
+            itemCount: state.articles!.length,
+            itemBuilder: (context, index) {
+              return FeedItem(
+                article: state.articles![index],
+                isList: true,
+                onArticlePressed: (article) {
+                  _onArticlePressed(context, article);
+                },
+              );
+            },
+          );
         }
         return Container();
       },
     );
   }
 
-  Widget _buildArticlesList(List<ArticleEntity> articles) {
-    if (articles.isEmpty) {
-      return const Center(
-          child: Text(
-        'NO SAVED ARTICLES',
-        style: TextStyle(color: Colors.black),
-      ));
-    }
-
-    return ListView.builder(
-      itemCount: articles.length,
-      itemBuilder: (context, index) {
-        return ArticleWidget(
-          article: articles[index],
-          isRemovable: true,
-          onRemove: (article) => _onRemoveArticle(context, article),
-          onArticlePressed: (article) => _onArticlePressed(context, article),
-        );
-      },
+  void _onArticlePressed(BuildContext context, ArticleEntity article) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          extendBodyBehindAppBar: true,
+          body: FeedItem(article: article),
+        ),
+      ),
     );
   }
 
   void _onBackButtonTapped(BuildContext context) {
     Navigator.pop(context);
-  }
-
-  void _onRemoveArticle(BuildContext context, ArticleEntity article) {
-    BlocProvider.of<LocalArticleBloc>(context).add(RemoveArticle(article));
-  }
-
-  void _onArticlePressed(BuildContext context, ArticleEntity article) {
-    Navigator.pushNamed(context, '/ArticleDetails', arguments: article);
   }
 }
